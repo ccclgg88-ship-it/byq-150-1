@@ -3,7 +3,7 @@
     <div class="page-header">
       <h2 class="page-title">员工花名册</h2>
       <div class="header-actions">
-        <el-button type="primary" :icon="Plus" @click="handleAdd" v-if="userStore.isHR || userStore.isManager">
+        <el-button type="primary" :icon="Plus" @click="handleAdd" v-if="userStore.isHR">
           新增员工
         </el-button>
       </div>
@@ -20,7 +20,7 @@
             @keyup.enter="handleSearch"
           />
         </el-form-item>
-        <el-form-item label="部门">
+        <el-form-item label="部门" v-if="userStore.isHR">
           <el-select 
             v-model="filterForm.department_id" 
             placeholder="全部" 
@@ -54,7 +54,7 @@
       </el-form>
     </el-card>
 
-    <el-card style="margin-top: 20px">
+    <el-card class="table-card">
       <el-table :data="tableData" v-loading="loading" stripe>
         <el-table-column prop="employee_no" label="工号" width="120" />
         <el-table-column prop="name" label="姓名" width="100" />
@@ -78,7 +78,7 @@
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">查看</el-button>
-            <el-button type="primary" link @click="handleEdit(row)" v-if="userStore.isHR || userStore.isManager">编辑</el-button>
+            <el-button type="primary" link @click="handleEdit(row)" v-if="userStore.isHR">编辑</el-button>
             <el-button type="danger" link @click="handleDelete(row)" v-if="userStore.isHR">删除</el-button>
           </template>
         </el-table-column>
@@ -382,15 +382,132 @@ onMounted(() => {
 <style scoped>
 .employee-list {
   padding: 0;
+  min-height: 100%;
+}
+
+.page-header {
+  margin-bottom: 20px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1d2129;
+  margin: 0;
 }
 
 .filter-card {
+  margin-bottom: 16px;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.filter-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.filter-card :deep(.el-card__body) {
+  padding: 16px 20px;
+}
+
+.filter-card :deep(.el-form) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+}
+
+.filter-card :deep(.el-form-item) {
   margin-bottom: 0;
+  margin-right: 16px;
+}
+
+.filter-card :deep(.el-form-item:last-child) {
+  margin-right: 0;
+}
+
+.filter-card :deep(.el-form-item__label) {
+  font-size: 13px;
+  color: #86909c;
+  padding-right: 8px;
+}
+
+.table-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.table-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.table-card :deep(.el-card__body) {
+  padding: 20px;
+}
+
+.table-card :deep(.el-table) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-card :deep(.el-table th.el-table__cell) {
+  background-color: #f7f8fa;
+  color: #1d2129;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.table-card :deep(.el-table td.el-table__cell) {
+  font-size: 13px;
+  color: #4e5969;
+}
+
+.table-card :deep(.el-table__row) {
+  transition: background-color 0.25s ease, transform 0.15s ease;
+}
+
+.table-card :deep(.el-table__row:hover > td) {
+  background-color: #f2f3f5 !important;
 }
 
 .pagination {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f2f3f5;
+}
+
+.pagination :deep(.el-pagination) {
+  gap: 4px;
+}
+
+.pagination :deep(.el-pagination .btn-prev),
+.pagination :deep(.el-pagination .btn-next),
+.pagination :deep(.el-pagination .el-pager li) {
+  border-radius: 6px;
+  font-size: 13px;
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  transition: all 0.2s ease;
+}
+
+.pagination :deep(.el-pagination .el-pager li.is-active) {
+  box-shadow: 0 2px 6px rgba(64, 128, 255, 0.35);
+}
+
+.pagination :deep(.el-pagination .el-pagination__sizes .el-select) {
+  margin-right: 0;
+}
+
+.pagination :deep(.el-pagination .el-pagination__jump) {
+  font-size: 13px;
+  color: #86909c;
 }
 </style>

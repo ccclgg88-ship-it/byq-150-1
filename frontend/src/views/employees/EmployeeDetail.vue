@@ -5,7 +5,7 @@
         <el-button :icon="ArrowLeft" @click="goBack">返回</el-button>
         <h2 class="page-title">员工详情</h2>
       </div>
-      <div class="header-actions" v-if="userStore.isHR || userStore.isManager">
+      <div class="header-actions" v-if="userStore.isHR">
         <el-button type="primary" @click="handleEdit">编辑</el-button>
       </div>
     </div>

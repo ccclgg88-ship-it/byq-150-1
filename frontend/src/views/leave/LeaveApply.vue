@@ -204,20 +204,56 @@ onMounted(() => {
 .form-card {
   max-width: 700px;
   margin: 0 auto;
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.form-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.form-card :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #303133;
+}
+
+.form-card :deep(.el-radio__input.is-checked + .el-radio__label) {
+  color: #409EFF;
+}
+
+.form-card :deep(.el-button--primary) {
+  border-radius: 10px;
+  font-weight: 600;
+  padding: 10px 28px;
+  transition: all 0.3s ease;
+}
+
+.form-card :deep(.el-button--primary:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+.form-card :deep(.el-button--default) {
+  border-radius: 10px;
+  padding: 10px 28px;
 }
 
 .balance-tip {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 15px;
-  background: #ecf5ff;
-  border-radius: 6px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
+  border-radius: 10px;
   color: #409EFF;
   font-size: 14px;
+  border: 1px solid #d9ecff;
 }
 
 .balance-tip b {
-  font-size: 16px;
+  font-size: 18px;
 }
 </style>

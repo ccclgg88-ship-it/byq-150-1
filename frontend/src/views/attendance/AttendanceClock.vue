@@ -211,22 +211,32 @@ onUnmounted(() => {
 }
 
 .clock-card {
-  width: 450px;
+  width: 480px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: none;
+  transition: box-shadow 0.3s ease;
+}
+
+.clock-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .clock-wrapper {
   text-align: center;
-  padding: 20px 0;
+  padding: 30px 0 20px;
 }
 
 .date-display {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .date-display .date {
   font-size: 18px;
   color: #606266;
   margin-right: 10px;
+  font-weight: 500;
 }
 
 .date-display .weekday {
@@ -236,42 +246,54 @@ onUnmounted(() => {
 
 .time-display {
   margin-bottom: 20px;
+  padding: 10px 0;
 }
 
 .time-display .time {
-  font-size: 56px;
-  font-weight: bold;
-  color: #303133;
-  letter-spacing: 4px;
+  font-size: 64px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #303133 0%, #606266 50%, #303133 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 6px;
 }
 
 .status-badge {
   display: inline-block;
-  padding: 6px 20px;
-  border-radius: 20px;
+  padding: 8px 28px;
+  border-radius: 24px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 30px;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.status-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .status-normal {
-  background: #f0f9eb;
-  color: #67C23A;
+  background: linear-gradient(135deg, #67C23A 0%, #85d45a 100%);
+  color: #fff;
 }
 
 .status-late {
-  background: #fdf6ec;
-  color: #E6A23C;
+  background: linear-gradient(135deg, #E6A23C 0%, #f0be6a 100%);
+  color: #fff;
 }
 
 .status-early {
-  background: #fef0f0;
-  color: #F56C6C;
+  background: linear-gradient(135deg, #F56C6C 0%, #f89898 100%);
+  color: #fff;
 }
 
 .status-leave {
-  background: #f4f4f5;
-  color: #909399;
+  background: linear-gradient(135deg, #909399 0%, #b1b3b8 100%);
+  color: #fff;
 }
 
 .clock-buttons {
@@ -281,6 +303,21 @@ onUnmounted(() => {
   margin-bottom: 20px;
 }
 
+.clock-buttons .el-button {
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.clock-buttons .el-button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+.clock-buttons .el-button--success:not(:disabled):hover {
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3);
+}
+
 .record-info {
   padding: 0 40px;
 }
@@ -288,8 +325,17 @@ onUnmounted(() => {
 .info-row {
   display: flex;
   justify-content: space-between;
-  padding: 10px 0;
+  align-items: center;
+  padding: 14px 0;
   border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s ease;
+}
+
+.info-row:hover {
+  background: #fafafa;
+  border-radius: 6px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .info-row:last-child {
@@ -304,7 +350,7 @@ onUnmounted(() => {
 .info-row .value {
   color: #303133;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .text-late {

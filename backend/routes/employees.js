@@ -9,6 +9,9 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const { page = 1, pageSize = 10, keyword = '', department_id, status } = req.query;
     const offset = (page - 1) * pageSize;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const userDeptId = req.user.department_id;
     
     let query = `
       SELECT e.*, d.name as department_name 
@@ -18,14 +21,24 @@ router.get('/', authMiddleware, async (req, res) => {
     `;
     const params = [];
     
+    if (userRole === 'manager') {
+      query += ' AND e.department_id = ?';
+      params.push(userDeptId);
+    } else if (userRole === 'employee') {
+      query += ' AND e.id = ?';
+      params.push(userId);
+    }
+    
     if (keyword) {
       query += ' AND (e.name LIKE ? OR e.employee_no LIKE ?)';
       params.push(`%${keyword}%`, `%${keyword}%`);
     }
     
     if (department_id) {
-      query += ' AND e.department_id = ?';
-      params.push(department_id);
+      if (userRole === 'hr') {
+        query += ' AND e.department_id = ?';
+        params.push(department_id);
+      }
     }
     
     if (status) {
@@ -41,12 +54,20 @@ router.get('/', authMiddleware, async (req, res) => {
     let countQuery = 'SELECT COUNT(*) as total FROM employees e WHERE 1=1';
     const countParams = [];
     
+    if (userRole === 'manager') {
+      countQuery += ' AND e.department_id = ?';
+      countParams.push(userDeptId);
+    } else if (userRole === 'employee') {
+      countQuery += ' AND e.id = ?';
+      countParams.push(userId);
+    }
+    
     if (keyword) {
       countQuery += ' AND (e.name LIKE ? OR e.employee_no LIKE ?)';
       countParams.push(`%${keyword}%`, `%${keyword}%`);
     }
     
-    if (department_id) {
+    if (department_id && userRole === 'hr') {
       countQuery += ' AND e.department_id = ?';
       countParams.push(department_id);
     }
@@ -73,6 +94,10 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const userDeptId = req.user.department_id;
+    
     const [rows] = await pool.query(
       `SELECT e.*, d.name as department_name 
        FROM employees e 
@@ -83,6 +108,14 @@ router.get('/:id', authMiddleware, async (req, res) => {
     
     if (rows.length === 0) {
       return res.status(404).json({ error: '员工不存在' });
+    }
+    
+    if (userRole === 'employee' && parseInt(id) !== userId) {
+      return res.status(403).json({ error: '无权查看其他员工信息' });
+    }
+    
+    if (userRole === 'manager' && rows[0].department_id !== userDeptId) {
+      return res.status(403).json({ error: '无权查看其他部门员工信息' });
     }
     
     res.json(rows[0]);
@@ -145,7 +178,7 @@ router.get('/:id/attendance-summary', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/', authMiddleware, requireRole('hr', 'manager'), async (req, res) => {
+router.post('/', authMiddleware, requireRole('hr'), async (req, res) => {
   try {
     const { employee_no, name, department_id, position, hire_date, status = 'active', role = 'employee', password = '123456' } = req.body;
     
@@ -171,7 +204,7 @@ router.post('/', authMiddleware, requireRole('hr', 'manager'), async (req, res) 
   }
 });
 
-router.put('/:id', authMiddleware, requireRole('hr', 'manager'), async (req, res) => {
+router.put('/:id', authMiddleware, requireRole('hr'), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, department_id, position, hire_date, status, role } = req.body;

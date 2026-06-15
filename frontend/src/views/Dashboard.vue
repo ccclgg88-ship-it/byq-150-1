@@ -2,62 +2,54 @@
   <div class="dashboard">
     <el-row :gutter="20">
       <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #ecf5ff">
-              <el-icon size="32" color="#409EFF"><User /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.totalEmployees }}</div>
-              <div class="stat-label">员工总数</div>
-            </div>
+        <div class="stat-card stat-card--blue">
+          <div class="stat-icon-wrap">
+            <el-icon size="28" color="#fff"><User /></el-icon>
           </div>
-        </el-card>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.totalEmployees }}</div>
+            <div class="stat-label">员工总数</div>
+          </div>
+        </div>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #f0f9eb">
-              <el-icon size="32" color="#67C23A"><Clock /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.todayAttendance }}</div>
-              <div class="stat-label">今日出勤</div>
-            </div>
+        <div class="stat-card stat-card--green">
+          <div class="stat-icon-wrap">
+            <el-icon size="28" color="#fff"><Clock /></el-icon>
           </div>
-        </el-card>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.todayAttendance }}</div>
+            <div class="stat-label">今日出勤</div>
+          </div>
+        </div>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #fdf6ec">
-              <el-icon size="32" color="#E6A23C"><Warning /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.todayLate }}</div>
-              <div class="stat-label">今日迟到</div>
-            </div>
+        <div class="stat-card stat-card--orange">
+          <div class="stat-icon-wrap">
+            <el-icon size="28" color="#fff"><Warning /></el-icon>
           </div>
-        </el-card>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.todayLate }}</div>
+            <div class="stat-label">今日迟到</div>
+          </div>
+        </div>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #fef0f0">
-              <el-icon size="32" color="#F56C6C"><Document /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.pendingLeaves }}</div>
-              <div class="stat-label">待审批请假</div>
-            </div>
+        <div class="stat-card stat-card--red">
+          <div class="stat-icon-wrap">
+            <el-icon size="28" color="#fff"><Document /></el-icon>
           </div>
-        </el-card>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.pendingLeaves }}</div>
+            <div class="stat-label">待审批请假</div>
+          </div>
+        </div>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row :gutter="20" style="margin-top: 24px">
       <el-col :span="14">
-        <el-card>
+        <el-card class="chart-card">
           <template #header>
             <div class="card-header">
               <span>本月考勤概览</span>
@@ -67,7 +59,7 @@
         </el-card>
       </el-col>
       <el-col :span="10">
-        <el-card>
+        <el-card class="section-card">
           <template #header>
             <div class="card-header">
               <span>快捷操作</span>
@@ -75,25 +67,33 @@
           </template>
           <div class="quick-actions">
             <div class="action-item" @click="goTo('/attendance/clock')">
-              <el-icon size="28" color="#409EFF"><Clock /></el-icon>
+              <div class="action-icon action-icon--blue">
+                <el-icon size="22" color="#fff"><Clock /></el-icon>
+              </div>
               <span>考勤打卡</span>
             </div>
             <div class="action-item" @click="goTo('/leave/apply')">
-              <el-icon size="28" color="#67C23A"><EditPen /></el-icon>
+              <div class="action-icon action-icon--green">
+                <el-icon size="22" color="#fff"><EditPen /></el-icon>
+              </div>
               <span>申请请假</span>
             </div>
             <div class="action-item" @click="goTo('/attendance')">
-              <el-icon size="28" color="#E6A23C"><Calendar /></el-icon>
+              <div class="action-icon action-icon--orange">
+                <el-icon size="22" color="#fff"><Calendar /></el-icon>
+              </div>
               <span>我的考勤</span>
             </div>
             <div class="action-item" @click="goTo('/leave')">
-              <el-icon size="28" color="#909399"><Document /></el-icon>
+              <div class="action-icon action-icon--gray">
+                <el-icon size="22" color="#fff"><Document /></el-icon>
+              </div>
               <span>我的请假</span>
             </div>
           </div>
         </el-card>
 
-        <el-card style="margin-top: 20px" v-if="userStore.isHR || userStore.isManager">
+        <el-card class="section-card" style="margin-top: 20px" v-if="userStore.isHR || userStore.isManager">
           <template #header>
             <div class="card-header">
               <span>待办事项</span>
@@ -104,22 +104,20 @@
           </template>
           <el-empty v-if="pendingList.length === 0" description="暂无待办事项" :image-size="80" />
           <div v-else class="todo-list">
-            <div 
-              class="todo-item" 
-              v-for="item in pendingList.slice(0, 5)" 
+            <div
+              class="todo-item"
+              v-for="item in pendingList.slice(0, 5)"
               :key="item.id"
               @click="goTo('/leave/approval')"
             >
-              <div class="todo-user">
-                <el-avatar :size="36" style="background-color: #409EFF">
-                  {{ item.employee_name?.charAt(0) }}
-                </el-avatar>
-              </div>
+              <el-avatar :size="36" class="todo-avatar">
+                {{ item.employee_name?.charAt(0) }}
+              </el-avatar>
               <div class="todo-content">
                 <div class="todo-title">{{ item.employee_name }} 申请{{ leaveTypeMap[item.leave_type] }}</div>
                 <div class="todo-desc">{{ item.start_date }} 至 {{ item.end_date }} ({{ item.days }}天)</div>
               </div>
-              <el-tag type="warning" size="small">待审批</el-tag>
+              <el-tag type="warning" size="small" round>待审批</el-tag>
             </div>
           </div>
         </el-card>
@@ -274,22 +272,65 @@ onMounted(() => {
 }
 
 .stat-card {
-  border-radius: 8px;
-}
-
-.stat-content {
+  border-radius: 16px;
+  padding: 24px;
   display: flex;
   align-items: center;
   gap: 20px;
+  color: #fff;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
 }
 
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -20%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card--blue {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  box-shadow: 0 4px 16px rgba(79, 172, 254, 0.3);
+}
+
+.stat-card--green {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  box-shadow: 0 4px 16px rgba(67, 233, 123, 0.3);
+}
+
+.stat-card--orange {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  box-shadow: 0 4px 16px rgba(250, 112, 154, 0.3);
+}
+
+.stat-card--red {
+  background: linear-gradient(135deg, #f5576c 0%, #ff6a88 100%);
+  box-shadow: 0 4px 16px rgba(245, 87, 108, 0.3);
+}
+
+.stat-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
 }
 
 .stat-info {
@@ -297,16 +338,35 @@ onMounted(() => {
 }
 
 .stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: #303133;
+  font-size: 30px;
+  font-weight: 700;
+  color: #fff;
   line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 14px;
-  color: #909399;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
   margin-top: 4px;
+  font-weight: 400;
+}
+
+.chart-card,
+.section-card {
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.chart-card :deep(.el-card__header),
+.section-card :deep(.el-card__header) {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 20px;
+}
+
+.chart-card :deep(.el-card__body),
+.section-card :deep(.el-card__body) {
+  padding: 16px 20px;
 }
 
 .card-header {
@@ -314,72 +374,121 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   font-weight: 600;
+  font-size: 15px;
+  color: #303133;
 }
 
 .quick-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  padding: 10px 0;
+  gap: 14px;
+  padding: 4px 0;
 }
 
 .action-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 20px 10px;
-  border-radius: 8px;
+  gap: 10px;
+  padding: 20px 12px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.3s;
+  background: #fafbfc;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
 }
 
 .action-item:hover {
-  background-color: #f5f7fa;
-  transform: translateY(-2px);
+  background: #fff;
+  border-color: #e8e8e8;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.action-item:hover .action-icon {
+  transform: scale(1.1);
+}
+
+.action-icon--blue {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.action-icon--green {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.action-icon--orange {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.action-icon--gray {
+  background: linear-gradient(135deg, #8e9eab 0%, #eef2f3 100%);
 }
 
 .action-item span {
-  font-size: 14px;
+  font-size: 13px;
   color: #606266;
+  font-weight: 500;
 }
 
 .todo-list {
-  max-height: 250px;
+  max-height: 280px;
   overflow-y: auto;
 }
 
 .todo-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 14px;
+  padding: 14px 12px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.25s ease;
+  margin-bottom: 6px;
 }
 
 .todo-item:hover {
-  background-color: #f5f7fa;
+  background: #f5f7fa;
+  transform: translateX(4px);
 }
 
-.todo-item:last-child {
-  border-bottom: none;
+.todo-avatar {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  flex-shrink: 0;
+  font-size: 14px;
 }
 
 .todo-content {
   flex: 1;
+  min-width: 0;
 }
 
 .todo-title {
   font-size: 14px;
   color: #303133;
+  font-weight: 500;
   margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .todo-desc {
   font-size: 12px;
   color: #909399;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item {

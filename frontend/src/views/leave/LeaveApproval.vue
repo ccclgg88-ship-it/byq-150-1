@@ -285,6 +285,32 @@ onMounted(() => {
   margin-left: 10px;
 }
 
+.leave-approval :deep(.el-card) {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.leave-approval :deep(.el-card):hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+}
+
+.leave-approval :deep(.el-table) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.leave-approval :deep(.el-table th.el-table__cell) {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  font-weight: 600;
+  color: #303133;
+}
+
+.leave-approval :deep(.el-table tr:hover > td) {
+  background: #f5f9ff !important;
+}
+
 .pagination {
   display: flex;
   justify-content: flex-end;

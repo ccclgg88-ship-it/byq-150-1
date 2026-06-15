@@ -274,40 +274,77 @@ onMounted(() => {
 
 .stats-card {
   margin-bottom: 0;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .leave-stat {
   text-align: center;
-  padding: 20px;
-  border-radius: 8px;
+  padding: 22px 16px;
+  border-radius: 12px;
   color: #fff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.leave-stat:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .leave-stat.annual {
-  background: linear-gradient(135deg, #409EFF 0%, #3685d6 100%);
+  background: linear-gradient(135deg, #409EFF 0%, #36d1dc 100%);
 }
 
 .leave-stat.approved {
-  background: linear-gradient(135deg, #67C23A 0%, #5db335 100%);
+  background: linear-gradient(135deg, #67C23A 0%, #85d45a 100%);
 }
 
 .leave-stat.pending {
-  background: linear-gradient(135deg, #E6A23C 0%, #d89532 100%);
+  background: linear-gradient(135deg, #E6A23C 0%, #f0be6a 100%);
 }
 
 .leave-stat.rejected {
-  background: linear-gradient(135deg, #F56C6C 0%, #e65a5a 100%);
+  background: linear-gradient(135deg, #F56C6C 0%, #f89898 100%);
 }
 
 .stat-num {
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 5px;
+  font-size: 30px;
+  font-weight: 800;
+  margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 13px;
   opacity: 0.9;
+  letter-spacing: 1px;
+}
+
+.my-leave :deep(.el-card) {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.my-leave :deep(.el-card):hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+}
+
+.my-leave :deep(.el-table) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.my-leave :deep(.el-table th.el-table__cell) {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  font-weight: 600;
+  color: #303133;
+}
+
+.my-leave :deep(.el-table tr:hover > td) {
+  background: #f5f9ff !important;
 }
 
 .progress-text {
