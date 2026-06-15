@@ -18,6 +18,8 @@ async function initDatabase() {
   if (fs.existsSync(dbPath)) {
     const fileBuffer = fs.readFileSync(dbPath);
     db = new SQL.Database(fileBuffer);
+    migrateDatabase();
+    saveDatabase();
     console.log('✅ SQLite 数据库加载成功');
   } else {
     db = new SQL.Database();
@@ -28,6 +30,28 @@ async function initDatabase() {
   }
   
   return db;
+}
+
+function migrateDatabase() {
+  try {
+    const columns = db.exec("PRAGMA table_info(leave_applications)");
+    const colNames = columns[0]?.values.map(c => c[1]) || [];
+    
+    if (!colNames.includes('reject_reason')) {
+      db.run('ALTER TABLE leave_applications ADD COLUMN reject_reason TEXT');
+      console.log('🔧 迁移：添加 reject_reason 字段');
+    }
+    if (!colNames.includes('rejected_by')) {
+      db.run('ALTER TABLE leave_applications ADD COLUMN rejected_by TEXT');
+      console.log('🔧 迁移：添加 rejected_by 字段');
+    }
+    if (!colNames.includes('rejected_at')) {
+      db.run('ALTER TABLE leave_applications ADD COLUMN rejected_at TEXT');
+      console.log('🔧 迁移：添加 rejected_at 字段');
+    }
+  } catch (error) {
+    console.error('数据库迁移失败:', error.message);
+  }
 }
 
 function saveDatabase() {
@@ -94,6 +118,9 @@ function initTables() {
       current_level INTEGER DEFAULT 1,
       manager_approved_at TEXT,
       hr_approved_at TEXT,
+      reject_reason TEXT,
+      rejected_by TEXT,
+      rejected_at TEXT,
       created_at TEXT DEFAULT (datetime('now', 'localtime')),
       updated_at TEXT DEFAULT (datetime('now', 'localtime'))
     )

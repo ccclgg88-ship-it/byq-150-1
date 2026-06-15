@@ -264,17 +264,19 @@ router.post('/:id/approve', authMiddleware, async (req, res) => {
     await connection.beginTransaction();
     
     try {
+      const now = dayjs().format('YYYY-MM-DD HH:mm:ss');
+      
       if (leave.current_level === 1 && userRole === 'manager') {
         await connection.query(
-          'UPDATE leave_applications SET current_level = 2, manager_approved_at = NOW() WHERE id = ?',
-          [id]
+          'UPDATE leave_applications SET current_level = 2, manager_approved_at = ? WHERE id = ?',
+          [now, id]
         );
         await connection.commit();
         res.json({ message: '部门审批通过，已提交HR备案' });
       } else if (leave.current_level === 2 && userRole === 'hr') {
         await connection.query(
-          'UPDATE leave_applications SET status = ?, hr_approved_at = NOW() WHERE id = ?',
-          ['approved', id]
+          'UPDATE leave_applications SET status = ?, hr_approved_at = ? WHERE id = ?',
+          ['approved', now, id]
         );
         
         if (leave.leave_type === 'annual') {
@@ -332,6 +334,7 @@ router.post('/:id/approve', authMiddleware, async (req, res) => {
 router.post('/:id/reject', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
+    const { reject_reason } = req.body;
     const userId = req.user.id;
     const userRole = req.user.role;
     
@@ -378,9 +381,12 @@ router.post('/:id/reject', authMiddleware, async (req, res) => {
       return res.status(403).json({ error: '当前审批级别不对' });
     }
     
+    const now = dayjs().format('YYYY-MM-DD HH:mm:ss');
+    const rejectedBy = userRole === 'manager' ? '部门主管' : 'HR';
+    
     await pool.query(
-      'UPDATE leave_applications SET status = ? WHERE id = ?',
-      ['rejected', id]
+      'UPDATE leave_applications SET status = ?, reject_reason = ?, rejected_by = ?, rejected_at = ? WHERE id = ?',
+      ['rejected', reject_reason || '无', rejectedBy, now, id]
     );
     
     res.json({ message: '已驳回请假申请' });

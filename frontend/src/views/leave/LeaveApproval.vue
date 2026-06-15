@@ -77,13 +77,55 @@
           <el-descriptions-item label="事由" :span="2">
             {{ currentDetail.reason }}
           </el-descriptions-item>
+          <el-descriptions-item label="申请状态" :span="2">
+            <el-tag :type="statusTypeMap[currentDetail.status]">{{ statusMap[currentDetail.status] }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="审批进度" v-if="currentDetail.status === 'pending'" :span="2">
+            <div class="progress-text">
+              <span :class="{ active: currentDetail.current_level >= 1 }">部门审批</span>
+              <span class="arrow">→</span>
+              <span :class="{ active: currentDetail.current_level >= 2 }">HR备案</span>
+            </div>
+          </el-descriptions-item>
+          <el-descriptions-item label="部门审批时间" v-if="currentDetail.manager_approved_at">
+            {{ formatDateTime(currentDetail.manager_approved_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="HR审批时间" v-if="currentDetail.hr_approved_at">
+            {{ formatDateTime(currentDetail.hr_approved_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="驳回人" v-if="currentDetail.rejected_by">
+            {{ currentDetail.rejected_by }}
+          </el-descriptions-item>
+          <el-descriptions-item label="驳回时间" v-if="currentDetail.rejected_at">
+            {{ formatDateTime(currentDetail.rejected_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="驳回原因" v-if="currentDetail.reject_reason" :span="2">
+            {{ currentDetail.reject_reason }}
+          </el-descriptions-item>
         </el-descriptions>
 
         <div class="dialog-footer" style="margin-top: 20px; text-align: right">
           <el-button type="success" @click="handleApprove(currentDetail)" v-if="!isApproved">通过</el-button>
-          <el-button type="danger" @click="handleReject(currentDetail)" v-if="!isApproved">驳回</el-button>
+          <el-button type="danger" @click="openRejectDialog(currentDetail)" v-if="!isApproved">驳回</el-button>
           <el-button @click="detailVisible = false">关闭</el-button>
         </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="rejectVisible" title="驳回请假" width="400px">
+      <el-form :model="rejectForm" label-width="80px">
+        <el-form-item label="驳回原因">
+          <el-input
+            v-model="rejectForm.reason"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入驳回原因"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="rejectVisible = false">取消</el-button>
+        <el-button type="danger" @click="confirmReject">确认驳回</el-button>
       </template>
     </el-dialog>
   </div>
@@ -100,6 +142,11 @@ const tableData = ref([])
 const pendingCount = ref(0)
 const detailVisible = ref(false)
 const currentDetail = ref(null)
+const rejectVisible = ref(false)
+const currentRejectLeave = ref(null)
+const rejectForm = reactive({
+  reason: ''
+})
 
 const pagination = reactive({
   page: 1,
@@ -117,6 +164,18 @@ const leaveTypeColor = {
   annual: '',
   personal: 'warning',
   sick: 'danger'
+}
+
+const statusMap = {
+  pending: '审批中',
+  approved: '已通过',
+  rejected: '已驳回'
+}
+
+const statusTypeMap = {
+  pending: 'warning',
+  approved: 'success',
+  rejected: 'danger'
 }
 
 const isApproved = computed(() => {
@@ -173,22 +232,25 @@ async function handleApprove(row) {
 }
 
 async function handleReject(row) {
+  openRejectDialog(row)
+}
+
+function openRejectDialog(row) {
+  currentRejectLeave.value = row
+  rejectForm.reason = ''
+  rejectVisible.value = true
+}
+
+async function confirmReject() {
   try {
-    await ElMessageBox.confirm(`确定驳回 ${row.employee_name} 的请假申请吗？`, '提示', {
-      confirmButtonText: '确定驳回',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    await rejectLeave(row.id)
+    await rejectLeave(currentRejectLeave.value.id, rejectForm.reason)
     ElMessage.success('已驳回')
+    rejectVisible.value = false
+    detailVisible.value = false
     loadData()
     loadPendingCount()
-    detailVisible.value = false
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('驳回失败:', error)
-    }
+    console.error('驳回失败:', error)
   }
 }
 

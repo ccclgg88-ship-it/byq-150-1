@@ -45,9 +45,10 @@ export function approveLeave(id) {
   })
 }
 
-export function rejectLeave(id) {
+export function rejectLeave(id, reason) {
   return request({
     url: `/leave/${id}/reject`,
-    method: 'post'
+    method: 'post',
+    data: { reject_reason: reason }
   })
 }

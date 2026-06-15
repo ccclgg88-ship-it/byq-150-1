@@ -56,6 +56,9 @@ CREATE TABLE IF NOT EXISTS leave_applications (
   current_level INT DEFAULT 1,
   manager_approved_at TIMESTAMP NULL,
   hr_approved_at TIMESTAMP NULL,
+  reject_reason TEXT NULL,
+  rejected_by VARCHAR(50) NULL,
+  rejected_at TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE

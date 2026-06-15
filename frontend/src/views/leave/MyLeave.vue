@@ -95,6 +95,58 @@
         />
       </div>
     </el-card>
+
+    <el-dialog v-model="detailVisible" title="请假详情" width="500px">
+      <template v-if="currentDetail">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="申请人">{{ currentDetail.employee_name }}</el-descriptions-item>
+          <el-descriptions-item label="工号">{{ currentDetail.employee_no || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="部门">{{ currentDetail.department_name }}</el-descriptions-item>
+          <el-descriptions-item label="类型">
+            <el-tag :type="leaveTypeColor[currentDetail.leave_type]">
+              {{ leaveTypeMap[currentDetail.leave_type] }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="开始日期">{{ currentDetail.start_date }}</el-descriptions-item>
+          <el-descriptions-item label="结束日期">{{ currentDetail.end_date }}</el-descriptions-item>
+          <el-descriptions-item label="请假天数" :span="2">
+            {{ currentDetail.days }} 天
+          </el-descriptions-item>
+          <el-descriptions-item label="事由" :span="2">
+            {{ currentDetail.reason }}
+          </el-descriptions-item>
+          <el-descriptions-item label="申请状态" :span="2">
+            <el-tag :type="statusTypeMap[currentDetail.status]">{{ statusMap[currentDetail.status] }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="审批进度" v-if="currentDetail.status === 'pending'" :span="2">
+            <div class="progress-text">
+              <span :class="{ active: currentDetail.current_level >= 1 }">部门审批</span>
+              <span class="arrow">→</span>
+              <span :class="{ active: currentDetail.current_level >= 2 }">HR备案</span>
+            </div>
+          </el-descriptions-item>
+          <el-descriptions-item label="部门审批时间" v-if="currentDetail.manager_approved_at">
+            {{ formatDateTime(currentDetail.manager_approved_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="HR审批时间" v-if="currentDetail.hr_approved_at">
+            {{ formatDateTime(currentDetail.hr_approved_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="驳回人" v-if="currentDetail.rejected_by">
+            {{ currentDetail.rejected_by }}
+          </el-descriptions-item>
+          <el-descriptions-item label="驳回时间" v-if="currentDetail.rejected_at">
+            {{ formatDateTime(currentDetail.rejected_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="驳回原因" v-if="currentDetail.reject_reason" :span="2">
+            {{ currentDetail.reject_reason }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <div class="dialog-footer" style="margin-top: 20px; text-align: right">
+          <el-button @click="detailVisible = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -112,6 +164,8 @@ const loading = ref(false)
 const activeTab = ref('all')
 const tableData = ref([])
 const annualLeave = ref(0)
+const detailVisible = ref(false)
+const currentDetail = ref(null)
 const leaveStats = reactive({
   approved: 0,
   pending: 0,
@@ -203,8 +257,8 @@ function goToApply() {
 }
 
 function viewDetail(row) {
-  // 可以打开详情弹窗
-  console.log('详情', row)
+  currentDetail.value = row
+  detailVisible.value = true
 }
 
 onMounted(() => {
