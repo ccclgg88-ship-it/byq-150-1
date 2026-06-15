@@ -72,6 +72,30 @@ CREATE TABLE IF NOT EXISTS holidays (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 补卡申请表
+CREATE TABLE IF NOT EXISTS makeup_applications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  employee_id INT NOT NULL,
+  makeup_date DATE NOT NULL,
+  makeup_type ENUM('clock_in', 'clock_out', 'all_day') NOT NULL,
+  clock_in_time TIME NULL,
+  clock_out_time TIME NULL,
+  reason TEXT NULL,
+  status ENUM('pending', 'approved', 'rejected', 'revoked') DEFAULT 'pending',
+  current_level INT DEFAULT 1,
+  manager_approved_at TIMESTAMP NULL,
+  hr_approved_at TIMESTAMP NULL,
+  reject_reason TEXT NULL,
+  rejected_by VARCHAR(50) NULL,
+  rejected_at TIMESTAMP NULL,
+  revoked_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+  KEY idx_emp_date (employee_id, makeup_date),
+  KEY idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 插入初始部门数据
 INSERT INTO departments (name) VALUES
 ('技术部'),

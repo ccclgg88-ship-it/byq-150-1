@@ -29,6 +29,11 @@
               :value="pendingCount" 
               class="menu-badge"
             />
+            <el-badge 
+              v-if="route.path === 'makeup/approval' && makeupPendingCount > 0" 
+              :value="makeupPendingCount" 
+              class="menu-badge"
+            />
           </el-menu-item>
         </template>
       </el-menu>
@@ -81,6 +86,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getPendingCount } from '@/api/leave'
+import { getPendingMakeupCount } from '@/api/makeup'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   OfficeBuilding, 
@@ -92,6 +98,7 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const pendingCount = ref(0)
+const makeupPendingCount = ref(0)
 
 const roleMap = {
   'hr': 'HR管理员',
@@ -125,8 +132,12 @@ function resolvePath(path) {
 async function fetchPendingCount() {
   if (userStore.isHR || userStore.isManager) {
     try {
-      const res = await getPendingCount()
-      pendingCount.value = res.count
+      const [leaveRes, makeupRes] = await Promise.all([
+        getPendingCount(),
+        getPendingMakeupCount()
+      ])
+      pendingCount.value = leaveRes.count
+      makeupPendingCount.value = makeupRes.count
     } catch (error) {
       console.error('获取待审批数量失败:', error)
     }

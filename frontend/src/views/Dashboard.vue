@@ -78,6 +78,12 @@
               </div>
               <span>申请请假</span>
             </div>
+            <div class="action-item" @click="goTo('/makeup/apply')">
+              <div class="action-icon action-icon--purple">
+                <el-icon size="22" color="#fff"><Tickets /></el-icon>
+              </div>
+              <span>补卡申请</span>
+            </div>
             <div class="action-item" @click="goTo('/attendance')">
               <div class="action-icon action-icon--orange">
                 <el-icon size="22" color="#fff"><Calendar /></el-icon>
@@ -89,6 +95,12 @@
                 <el-icon size="22" color="#fff"><Document /></el-icon>
               </div>
               <span>我的请假</span>
+            </div>
+            <div class="action-item" @click="goTo('/makeup')">
+              <div class="action-icon action-icon--cyan">
+                <el-icon size="22" color="#fff"><List /></el-icon>
+              </div>
+              <span>我的补卡</span>
             </div>
           </div>
         </el-card>
@@ -140,7 +152,9 @@ import {
   Warning, 
   Document,
   Calendar,
-  EditPen
+  EditPen,
+  Tickets,
+  List
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -433,6 +447,14 @@ onMounted(() => {
 
 .action-icon--gray {
   background: linear-gradient(135deg, #8e9eab 0%, #eef2f3 100%);
+}
+
+.action-icon--purple {
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+}
+
+.action-icon--cyan {
+  background: linear-gradient(135deg, #48c6ef 0%, #6f86d6 100%);
 }
 
 .action-item span {

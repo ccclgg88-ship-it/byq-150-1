@@ -34,20 +34,46 @@ async function initDatabase() {
 
 function migrateDatabase() {
   try {
-    const columns = db.exec("PRAGMA table_info(leave_applications)");
-    const colNames = columns[0]?.values.map(c => c[1]) || [];
+    const leaveCols = db.exec("PRAGMA table_info(leave_applications)");
+    const leaveColNames = leaveCols[0]?.values.map(c => c[1]) || [];
     
-    if (!colNames.includes('reject_reason')) {
+    if (!leaveColNames.includes('reject_reason')) {
       db.run('ALTER TABLE leave_applications ADD COLUMN reject_reason TEXT');
-      console.log('🔧 迁移：添加 reject_reason 字段');
+      console.log('🔧 迁移：添加 leave_applications.reject_reason 字段');
     }
-    if (!colNames.includes('rejected_by')) {
+    if (!leaveColNames.includes('rejected_by')) {
       db.run('ALTER TABLE leave_applications ADD COLUMN rejected_by TEXT');
-      console.log('🔧 迁移：添加 rejected_by 字段');
+      console.log('🔧 迁移：添加 leave_applications.rejected_by 字段');
     }
-    if (!colNames.includes('rejected_at')) {
+    if (!leaveColNames.includes('rejected_at')) {
       db.run('ALTER TABLE leave_applications ADD COLUMN rejected_at TEXT');
-      console.log('🔧 迁移：添加 rejected_at 字段');
+      console.log('🔧 迁移：添加 leave_applications.rejected_at 字段');
+    }
+
+    const tableCheck = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='makeup_applications'");
+    if (!tableCheck.length || tableCheck[0].values.length === 0) {
+      db.run(`
+        CREATE TABLE IF NOT EXISTS makeup_applications (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          employee_id INTEGER NOT NULL,
+          makeup_date TEXT NOT NULL,
+          makeup_type TEXT NOT NULL,
+          clock_in_time TEXT,
+          clock_out_time TEXT,
+          reason TEXT,
+          status TEXT DEFAULT 'pending',
+          current_level INTEGER DEFAULT 1,
+          manager_approved_at TEXT,
+          hr_approved_at TEXT,
+          reject_reason TEXT,
+          rejected_by TEXT,
+          rejected_at TEXT,
+          revoked_at TEXT,
+          created_at TEXT DEFAULT (datetime('now', 'localtime')),
+          updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+        )
+      `);
+      console.log('🔧 迁移：创建 makeup_applications 补卡申请表');
     }
   } catch (error) {
     console.error('数据库迁移失败:', error.message);
@@ -132,6 +158,28 @@ function initTables() {
       holiday_date TEXT NOT NULL UNIQUE,
       name TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now', 'localtime'))
+    )
+  `);
+  
+  db.run(`
+    CREATE TABLE IF NOT EXISTS makeup_applications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      makeup_date TEXT NOT NULL,
+      makeup_type TEXT NOT NULL,
+      clock_in_time TEXT,
+      clock_out_time TEXT,
+      reason TEXT,
+      status TEXT DEFAULT 'pending',
+      current_level INTEGER DEFAULT 1,
+      manager_approved_at TEXT,
+      hr_approved_at TEXT,
+      reject_reason TEXT,
+      rejected_by TEXT,
+      rejected_at TEXT,
+      revoked_at TEXT,
+      created_at TEXT DEFAULT (datetime('now', 'localtime')),
+      updated_at TEXT DEFAULT (datetime('now', 'localtime'))
     )
   `);
 }

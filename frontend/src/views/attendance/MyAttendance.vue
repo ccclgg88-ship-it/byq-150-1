@@ -2,14 +2,19 @@
   <div class="my-attendance">
     <div class="page-header">
       <h2 class="page-title">我的考勤</h2>
-      <el-date-picker
-        v-model="currentMonth"
-        type="month"
-        placeholder="选择月份"
-        format="YYYY年MM月"
-        value-format="YYYY-MM"
-        @change="loadData"
-      />
+      <div class="header-actions">
+        <el-button type="primary" :icon="EditPen" @click="openMakeupDialog(null)">
+          补卡申请
+        </el-button>
+        <el-date-picker
+          v-model="currentMonth"
+          type="month"
+          placeholder="选择月份"
+          format="YYYY年MM月"
+          value-format="YYYY-MM"
+          @change="loadData"
+        />
+      </div>
     </div>
 
     <el-row :gutter="20">
@@ -68,7 +73,12 @@
       <el-col :span="16">
         <el-card>
           <template #header>
-            <span>考勤日历</span>
+            <div class="card-header-with-tip">
+              <span>考勤日历</span>
+              <el-tag size="small" type="info" effect="light">
+                点击日期可发起补卡
+              </el-tag>
+            </div>
           </template>
           <div class="calendar">
             <div class="calendar-header">
@@ -89,12 +99,17 @@
                   'is-today': day.isToday,
                   'weekend': day.isWeekend,
                   'holiday': day.isHoliday,
+                  'can-makeup': canMakeup(day),
                   [`status-${day.status}`]: !day.isOtherMonth
                 }"
+                @click="handleDayClick(day)"
               >
                 <div class="day-number">{{ day.day }}</div>
                 <div class="day-status" v-if="!day.isOtherMonth && day.displayStatus && day.displayStatus !== '未打卡'">
                   {{ day.displayStatus }}
+                </div>
+                <div class="day-makeup-tip" v-if="canMakeup(day)">
+                  <el-icon size="12" color="#f59e0b"><Warning /></el-icon>
                 </div>
               </div>
             </div>
@@ -105,19 +120,80 @@
               <span class="legend-item"><i class="legend-dot leave"></i>请假</span>
               <span class="legend-item"><i class="legend-dot absent"></i>缺勤</span>
               <span class="legend-item"><i class="legend-dot weekend"></i>周末/假期</span>
+              <span class="legend-item"><i class="legend-dot absent makeup"></i>可补卡</span>
             </div>
           </div>
         </el-card>
       </el-col>
     </el-row>
+
+    <el-dialog 
+      v-model="makeupDialogVisible" 
+      :title="makeupDialogTitle" 
+      width="520px"
+      @close="resetMakeupForm"
+      destroy-on-close
+    >
+      <el-form :model="makeupForm" :rules="makeupRules" ref="makeupFormRef" label-width="100px">
+        <el-form-item label="补卡日期" prop="makeup_date">
+          <el-date-picker 
+            v-model="makeupForm.makeup_date" 
+            type="date" 
+            placeholder="选择补卡日期"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+            :disabled-date="disabledMakeupDate"
+          />
+        </el-form-item>
+        <el-form-item label="补卡类型" prop="makeup_type">
+          <el-radio-group v-model="makeupForm.makeup_type">
+            <el-radio-button value="clock_in">上班卡</el-radio-button>
+            <el-radio-button value="clock_out">下班卡</el-radio-button>
+            <el-radio-button value="all_day">全天</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="上班时间" v-if="needClockIn">
+          <el-time-picker
+            v-model="makeupForm.clock_in_time"
+            placeholder="选择时间"
+            value-format="HH:mm:ss"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="下班时间" v-if="needClockOut">
+          <el-time-picker
+            v-model="makeupForm.clock_out_time"
+            placeholder="选择时间"
+            value-format="HH:mm:ss"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="补卡原因" prop="reason">
+          <el-input 
+            v-model="makeupForm.reason" 
+            type="textarea" 
+            :rows="3" 
+            placeholder="请详细说明补卡原因"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="makeupDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="submitMakeup">提交申请</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Sunny, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Sunny, ArrowLeft, ArrowRight, EditPen, Warning } from '@element-plus/icons-vue'
 import { getMyAttendance } from '@/api/attendance'
+import { applyMakeup } from '@/api/makeup'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -138,6 +214,40 @@ const summary = reactive({
 const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
 let timer = null
+
+const makeupDialogVisible = ref(false)
+const makeupFormRef = ref(null)
+const submitLoading = ref(false)
+const preselectedMakeupDate = ref(null)
+
+const makeupForm = reactive({
+  makeup_date: '',
+  makeup_type: 'clock_in',
+  clock_in_time: '',
+  clock_out_time: '',
+  reason: ''
+})
+
+const makeupRules = {
+  makeup_date: [{ required: true, message: '请选择补卡日期', trigger: 'change' }],
+  makeup_type: [{ required: true, message: '请选择补卡类型', trigger: 'change' }],
+  reason: [{ required: true, message: '请填写补卡原因', trigger: 'blur' }]
+}
+
+const makeupDialogTitle = computed(() => {
+  if (preselectedMakeupDate.value) {
+    return `补卡申请 - ${preselectedMakeupDate.value}`
+  }
+  return '补卡申请'
+})
+
+const needClockIn = computed(() => {
+  return makeupForm.makeup_type === 'clock_in' || makeupForm.makeup_type === 'all_day'
+})
+
+const needClockOut = computed(() => {
+  return makeupForm.makeup_type === 'clock_out' || makeupForm.makeup_type === 'all_day'
+})
 
 function updateTime() {
   const now = dayjs()
@@ -174,14 +284,27 @@ function generateCalendar(attendanceData) {
       isToday,
       isWeekend: isWeekend || record?.isHoliday,
       isHoliday: record?.isHoliday || false,
-      status: record?.status || 'normal',
-      displayStatus: record?.displayStatus || ''
+      status: record?.status || 'not_recorded',
+      displayStatus: record?.displayStatus || '',
+      clock_in_time: record?.clock_in_time,
+      clock_out_time: record?.clock_out_time
     })
     
     current = current.add(1, 'day')
   }
   
   calendarDays.value = days
+}
+
+function canMakeup(day) {
+  if (day.isOtherMonth || day.isWeekend || day.isHoliday) return false
+  if (day.status === 'normal' || day.status === 'leave') return false
+  if (day.status === 'not_recorded') return true
+  if (day.status === 'absent') return true
+  if (day.status === 'late' || day.status === 'early_leave') {
+    if (!day.clock_in_time || !day.clock_out_time) return true
+  }
+  return false
 }
 
 async function loadData() {
@@ -208,6 +331,77 @@ function goToClock() {
   router.push('/attendance/clock')
 }
 
+function handleDayClick(day) {
+  if (day.isOtherMonth) return
+  if (canMakeup(day)) {
+    openMakeupDialog(day.date)
+  }
+}
+
+function openMakeupDialog(date) {
+  preselectedMakeupDate.value = date
+  resetMakeupForm()
+  if (date) {
+    makeupForm.makeup_date = date
+  }
+  makeupDialogVisible.value = true
+}
+
+function resetMakeupForm() {
+  makeupForm.makeup_date = preselectedMakeupDate.value || ''
+  makeupForm.makeup_type = 'clock_in'
+  makeupForm.clock_in_time = ''
+  makeupForm.clock_out_time = ''
+  makeupForm.reason = ''
+  if (makeupFormRef.value) {
+    makeupFormRef.value.resetFields()
+  }
+}
+
+function disabledMakeupDate(date) {
+  const target = dayjs(date)
+  const today = dayjs()
+  if (target.isAfter(today, 'day')) return true
+  const dayOfWeek = target.day()
+  if (dayOfWeek === 0 || dayOfWeek === 6) return true
+  return false
+}
+
+async function submitMakeup() {
+  if (!makeupFormRef.value) return
+  
+  try {
+    await makeupFormRef.value.validate()
+    
+    if (needClockIn.value && !makeupForm.clock_in_time) {
+      ElMessage.warning('请填写上班时间')
+      return
+    }
+    if (needClockOut.value && !makeupForm.clock_out_time) {
+      ElMessage.warning('请填写下班时间')
+      return
+    }
+    
+    submitLoading.value = true
+    const payload = {
+      makeup_date: makeupForm.makeup_date,
+      makeup_type: makeupForm.makeup_type,
+      reason: makeupForm.reason,
+      clock_in_time: needClockIn.value ? makeupForm.clock_in_time : undefined,
+      clock_out_time: needClockOut.value ? makeupForm.clock_out_time : undefined
+    }
+    await applyMakeup(payload)
+    ElMessage.success('补卡申请提交成功，请等待审批')
+    makeupDialogVisible.value = false
+  } catch (error) {
+    if (error !== false) {
+      console.error('提交补卡申请失败:', error)
+    }
+  } finally {
+    submitLoading.value = false
+  }
+}
+
 onMounted(() => {
   updateTime()
   timer = setInterval(updateTime, 1000)
@@ -224,6 +418,25 @@ onUnmounted(() => {
 <style scoped>
 .my-attendance {
   padding: 0;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-header-with-tip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .clock-card {
@@ -380,14 +593,19 @@ onUnmounted(() => {
   justify-content: center;
   border-radius: 10px;
   font-size: 14px;
-  cursor: pointer;
+  cursor: default;
   transition: all 0.25s ease;
   position: relative;
 }
 
-.day-item:hover {
-  background: #ecf5ff;
+.day-item.can-makeup {
+  cursor: pointer;
+}
+
+.day-item.can-makeup:hover {
+  background: #fff7e6 !important;
   transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.2);
 }
 
 .day-item.other-month {
@@ -426,6 +644,11 @@ onUnmounted(() => {
   border: 1px dashed #F56C6C;
 }
 
+.day-item.status-not_recorded.can-makeup:not(.other-month) {
+  background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
+  border: 1px dashed #f59e0b;
+}
+
 .day-number {
   font-weight: 500;
 }
@@ -435,13 +658,20 @@ onUnmounted(() => {
   margin-top: 2px;
 }
 
+.day-makeup-tip {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
 .calendar-legend {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 16px;
   margin-top: 15px;
   padding-top: 15px;
   border-top: 1px solid #ebeef5;
+  flex-wrap: wrap;
 }
 
 .legend-item {
@@ -465,4 +695,5 @@ onUnmounted(() => {
 .legend-dot.leave { background: linear-gradient(135deg, #909399 0%, #b1b3b8 100%); }
 .legend-dot.absent { background: linear-gradient(135deg, #606266 0%, #82848a 100%); border: 1px dashed #F56C6C; }
 .legend-dot.weekend { background: linear-gradient(135deg, #c0c4cc 0%, #d3d4d6 100%); }
+.legend-dot.absent.makeup { background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%); border: 1px dashed #f59e0b; }
 </style>

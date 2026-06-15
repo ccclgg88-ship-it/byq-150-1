@@ -69,6 +69,24 @@ const routes = [
         meta: { title: '待我审批', icon: 'Check', roles: ['hr', 'manager'] }
       },
       {
+        path: 'makeup',
+        name: 'Makeup',
+        component: () => import('@/views/makeup/MyMakeup.vue'),
+        meta: { title: '我的补卡', icon: 'EditPen' }
+      },
+      {
+        path: 'makeup/apply',
+        name: 'MakeupApply',
+        component: () => import('@/views/makeup/MakeupApply.vue'),
+        meta: { title: '申请补卡', icon: 'EditPen', hidden: true }
+      },
+      {
+        path: 'makeup/approval',
+        name: 'MakeupApproval',
+        component: () => import('@/views/makeup/MakeupApproval.vue'),
+        meta: { title: '补卡审批', icon: 'Tickets', roles: ['hr', 'manager'] }
+      },
+      {
         path: 'reports',
         name: 'Reports',
         component: () => import('@/views/reports/Reports.vue'),
