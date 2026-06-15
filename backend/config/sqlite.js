@@ -50,6 +50,22 @@ function migrateDatabase() {
       console.log('🔧 迁移：添加 leave_applications.rejected_at 字段');
     }
 
+    const empCols = db.exec("PRAGMA table_info(employees)");
+    const empColNames = empCols[0]?.values.map(c => c[1]) || [];
+    
+    if (!empColNames.includes('phone')) {
+      db.run('ALTER TABLE employees ADD COLUMN phone TEXT');
+      console.log('🔧 迁移：添加 employees.phone 字段');
+    }
+    if (!empColNames.includes('email')) {
+      db.run('ALTER TABLE employees ADD COLUMN email TEXT');
+      console.log('🔧 迁移：添加 employees.email 字段');
+    }
+    if (!empColNames.includes('annual_leave_balance')) {
+      db.run('ALTER TABLE employees ADD COLUMN annual_leave_balance INTEGER DEFAULT 0');
+      console.log('🔧 迁移：添加 employees.annual_leave_balance 字段');
+    }
+
     const tableCheck = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='makeup_applications'");
     if (!tableCheck.length || tableCheck[0].values.length === 0) {
       db.run(`
@@ -107,6 +123,8 @@ function initTables() {
       department_id INTEGER,
       position TEXT,
       hire_date TEXT,
+      phone TEXT,
+      email TEXT,
       status TEXT DEFAULT 'active',
       role TEXT DEFAULT 'employee',
       password TEXT DEFAULT '123456',

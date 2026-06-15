@@ -125,6 +125,70 @@ router.get('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+router.get('/:id/hr-summary', authMiddleware, requireRole('hr'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const now = dayjs();
+    const thisMonth = now.format('YYYY-MM');
+    const startOfMonth = thisMonth + '-01';
+    const endOfMonth = now.endOf('month').format('YYYY-MM-DD');
+    const threeMonthAgo = now.subtract(3, 'month').format('YYYY-MM') + '-01';
+
+    const empResult = await pool.query(
+      'SELECT e.id, e.name, e.hire_date, e.annual_leave_balance, d.name as department_name, e.phone, e.email FROM employees e LEFT JOIN departments d ON e.department_id = d.id WHERE e.id = ?',
+      [id]
+    );
+    const emp = empResult[0]?.[0];
+    if (!emp) return res.status(404).json({ error: '员工不存在' });
+
+    const attendanceResult = await pool.query(
+      `SELECT status, COUNT(*) as count
+       FROM attendance_records
+       WHERE employee_id = ? AND record_date BETWEEN ? AND ?
+       GROUP BY status`,
+      [id, startOfMonth, endOfMonth]
+    );
+    const attRows = attendanceResult[0] || [];
+    const attendance = {
+      work_days: 0, late_days: 0, early_leave_days: 0, absent_days: 0, leave_days: 0
+    };
+    attRows.forEach(r => {
+      if (r.status === 'normal') attendance.work_days += r.count;
+      if (r.status === 'late') { attendance.work_days += r.count; attendance.late_days += r.count; }
+      if (r.status === 'early_leave') { attendance.work_days += r.count; attendance.early_leave_days += r.count; }
+      if (r.status === 'absent') attendance.absent_days += r.count;
+      if (r.status === 'leave') attendance.leave_days += r.count;
+    });
+
+    const leaveResult = await pool.query(
+      `SELECT leave_type, 
+              SUM(CASE WHEN leave_type='annual' THEN days ELSE 0 END) as annual_days,
+              SUM(CASE WHEN leave_type='personal' THEN days ELSE 0 END) as personal_days,
+              SUM(CASE WHEN leave_type='sick' THEN days ELSE 0 END) as sick_days
+       FROM leave_applications
+       WHERE employee_id = ? AND start_date BETWEEN ? AND ? AND status='approved'
+       GROUP BY leave_type`,
+      [id, threeMonthAgo, endOfMonth]
+    );
+    const leaveRows = leaveResult[0] || [];
+    const leaves_summary = { annual_days: 0, personal_days: 0, sick_days: 0 };
+    leaveRows.forEach(r => {
+      leaves_summary.annual_days += r.annual_days || 0;
+      leaves_summary.personal_days += r.personal_days || 0;
+      leaves_summary.sick_days += r.sick_days || 0;
+    });
+
+    res.json({
+      employee: emp,
+      attendance,
+      leaves_summary
+    });
+  } catch (error) {
+    console.error('获取员工摘要错误:', error);
+    res.status(500).json({ error: '获取失败' });
+  }
+});
+
 router.get('/:id/attendance-summary', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -180,7 +244,7 @@ router.get('/:id/attendance-summary', authMiddleware, async (req, res) => {
 
 router.post('/', authMiddleware, requireRole('hr'), async (req, res) => {
   try {
-    const { employee_no, name, department_id, position, hire_date, status = 'active', role = 'employee', password = '123456' } = req.body;
+    const { employee_no, name, department_id, position, hire_date, status = 'active', role = 'employee', password = '123456', phone, email } = req.body;
     
     if (!employee_no || !name) {
       return res.status(400).json({ error: '工号和姓名不能为空' });
@@ -189,10 +253,17 @@ router.post('/', authMiddleware, requireRole('hr'), async (req, res) => {
     const annual_leave_balance = calculateAnnualLeaveBalance(hire_date);
     
     const [result] = await pool.query(
-      `INSERT INTO employees (employee_no, name, department_id, position, hire_date, status, role, password, annual_leave_balance)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [employee_no, name, department_id, position, hire_date, status, role, password, annual_leave_balance]
+      `INSERT INTO employees (employee_no, name, department_id, position, hire_date, phone, email, status, role, password, annual_leave_balance)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [employee_no, name, department_id, position, hire_date, phone, email, status, role, password, annual_leave_balance]
     );
+
+    if (role === 'manager' && department_id) {
+      const deptCheck = await pool.query('SELECT manager_id FROM departments WHERE id = ?', [department_id]);
+      if (deptCheck[0]?.[0] && !deptCheck[0][0].manager_id) {
+        await pool.query('UPDATE departments SET manager_id = ? WHERE id = ?', [result.insertId, department_id]);
+      }
+    }
     
     res.json({ id: result.insertId, message: '员工创建成功' });
   } catch (error) {
@@ -207,31 +278,53 @@ router.post('/', authMiddleware, requireRole('hr'), async (req, res) => {
 router.put('/:id', authMiddleware, requireRole('hr'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, department_id, position, hire_date, status, role } = req.body;
+    const { 
+      name, department_id, position, hire_date, status, role,
+      annual_leave_balance, phone, email 
+    } = req.body;
     
     const [oldEmployee] = await pool.query('SELECT * FROM employees WHERE id = ?', [id]);
     if (oldEmployee.length === 0) {
       return res.status(404).json({ error: '员工不存在' });
     }
+    const old = oldEmployee[0];
     
-    let annual_leave_balance = oldEmployee[0].annual_leave_balance;
-    if (hire_date && hire_date !== oldEmployee[0].hire_date) {
-      annual_leave_balance = calculateAnnualLeaveBalance(hire_date);
+    if (annual_leave_balance !== undefined && Number(annual_leave_balance) < 0) {
+      return res.status(400).json({ error: '年假余额不能为负数' });
+    }
+    
+    const newName = name !== undefined ? name : old.name;
+    const newDept = department_id !== undefined ? department_id : old.department_id;
+    const newPosition = position !== undefined ? position : old.position;
+    const newHire = hire_date !== undefined ? hire_date : old.hire_date;
+    const newStatus = status !== undefined ? status : old.status;
+    const newRole = role !== undefined ? role : old.role;
+    const newPhone = phone !== undefined ? phone : old.phone;
+    const newEmail = email !== undefined ? email : old.email;
+    let newBalance = annual_leave_balance !== undefined ? Number(annual_leave_balance) : old.annual_leave_balance;
+    
+    if (hire_date && hire_date !== old.hire_date && annual_leave_balance === undefined) {
+      newBalance = calculateAnnualLeaveBalance(hire_date);
     }
     
     await pool.query(
       `UPDATE employees 
-       SET name = ?, department_id = ?, position = ?, hire_date = ?, status = ?, role = ?, annual_leave_balance = ?
+       SET name = ?, department_id = ?, position = ?, hire_date = ?, 
+           phone = ?, email = ?, status = ?, role = ?, annual_leave_balance = ?,
+           updated_at = ?
        WHERE id = ?`,
-      [name || oldEmployee[0].name, 
-       department_id !== undefined ? department_id : oldEmployee[0].department_id, 
-       position || oldEmployee[0].position, 
-       hire_date || oldEmployee[0].hire_date, 
-       status || oldEmployee[0].status, 
-       role || oldEmployee[0].role,
-       annual_leave_balance,
+      [newName, newDept, newPosition, newHire, 
+       newPhone, newEmail, newStatus, newRole, newBalance,
+       dayjs().format('YYYY-MM-DD HH:mm:ss'),
        id]
     );
+
+    if (newRole === 'manager' && newDept) {
+      const deptCheck = await pool.query('SELECT manager_id FROM departments WHERE id = ?', [newDept]);
+      if (deptCheck[0]?.[0] && !deptCheck[0][0].manager_id) {
+        await pool.query('UPDATE departments SET manager_id = ? WHERE id = ?', [id, newDept]);
+      }
+    }
     
     res.json({ message: '员工信息更新成功' });
   } catch (error) {

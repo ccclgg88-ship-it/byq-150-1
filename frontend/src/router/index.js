@@ -97,6 +97,12 @@ const routes = [
         name: 'Departments',
         component: () => import('@/views/settings/Departments.vue'),
         meta: { title: '部门管理', icon: 'OfficeBuilding', roles: ['hr'] }
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/Profile.vue'),
+        meta: { title: '个人中心', icon: 'User', hidden: true }
       }
     ]
   },

@@ -23,6 +23,13 @@ export function getEmployeeAttendanceSummary(id, month) {
   })
 }
 
+export function getEmployeeHRSummary(id) {
+  return request({
+    url: `/employees/${id}/hr-summary`,
+    method: 'get'
+  })
+}
+
 export function createEmployee(data) {
   return request({
     url: '/employees',

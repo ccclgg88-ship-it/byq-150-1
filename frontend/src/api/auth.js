@@ -14,3 +14,27 @@ export function getProfile() {
     method: 'get'
   })
 }
+
+export function updateContact(data) {
+  return request({
+    url: '/auth/profile/contact',
+    method: 'put',
+    data
+  })
+}
+
+export function updatePassword(old_password, new_password) {
+  return request({
+    url: '/auth/profile/password',
+    method: 'put',
+    data: { old_password, new_password }
+  })
+}
+
+export function getProfileSummary() {
+  return request({
+    url: '/auth/profile/summary',
+    method: 'get'
+  })
+}
+

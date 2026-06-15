@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS employees (
   department_id INT NULL,
   position VARCHAR(100) NULL,
   hire_date DATE NULL,
+  phone VARCHAR(20) NULL,
+  email VARCHAR(100) NULL,
   status ENUM('active', 'resigned', 'suspended') DEFAULT 'active',
   role ENUM('employee', 'manager', 'hr') DEFAULT 'employee',
   password VARCHAR(255) DEFAULT '123456',
